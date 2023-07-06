@@ -32,7 +32,10 @@ def aStar(m):
         if currCell==(1,1):
             solution=True
             break
-        for d in 'AR':
+        for d in 'RA':
+            #if se puede rotar for d in 'NSEO'
+
+            #if no se puede rotar then A
             if m.maze_map[currCell][d]==True:
                 if d=='E':
                     childCell=(currCell[0],currCell[1]+1)
