@@ -3,113 +3,104 @@
 
 from queue import PriorityQueue
 
+
+def reconstructPath(cameFrom, current):
+    total_path= {current}
+    while current in cameFrom.keys:
+        current = cameFrom[current]
+        total_path.append(current)###might be prepend
+    
+    return total_path
+
+
+
+#distancia Manhattan
 def h(cell1,cell2):
     x1,y1=cell1
     x2,y2=cell2
 
     return abs(x1-x2) + abs(y1-y2)
 
-def aStar(m):
-    start=(len(m)-1,len(m[0])-1)
-    g_score = list()
-    f_score = list()
-    for i in range(len(m)):
-      for j in range(len(m[0])):
-          g_score.append((i,j))
-          f_score.append((i,j))
-          
-    #g_score={cell:float('inf') for cell in m.grid}
-    g_score[start]=0
-    #f_score=[tuple(ele) for ele in m]#{cell:float('inf') for cell in m.grid}
-    f_score[start]=h(start,(0,0))
 
-    open=PriorityQueue()
-    open.put((h(start,(0,0)),h(start,(0,0)),start)) 
-    aPath={}
-    solution = False
-    while not open.empty() & solution==False:
-        currCell=open.get()[2]
-        if currCell==(1,1):
-            solution=True
-            break
-        for d in 'RA':
-            #if se puede rotar for d in 'NSEO'
 
-            #if no se puede rotar then A
-            if m.maze_map[currCell][d]==True:
-                if d=='E':
-                    childCell=(currCell[0],currCell[1]+1)
-                if d=='W':
-                    childCell=(currCell[0],currCell[1]-1)
-                if d=='N':
-                    childCell=(currCell[0]-1,currCell[1])
-                if d=='S':
-                    childCell=(currCell[0]+1,currCell[1])
+def computeNeighbors(map,current):
+    numRows=len(map)
+    numCols=len(map[0])
 
-                temp_g_score=g_score[currCell]+1
-                temp_f_score=temp_g_score+h(childCell,(1,1))
+    neighbors={}
+    i=current[0]
+    j=current[1]
 
-                if temp_f_score < f_score[childCell]:
-                    g_score[childCell]= temp_g_score
-                    f_score[childCell]= temp_f_score
-                    open.put((temp_f_score,h(childCell,(1,1)),childCell))
-                    aPath[childCell]=currCell
-    fwdPath={}
-    cell=(1,1)
-    while cell!=start:
-        fwdPath[aPath[cell]]=cell
-        cell=aPath[cell]
-    return fwdPath
+    for m in 'NSWE':
+        if m=='N':
+          if i-1>=0 & map[i-1][j]!='#':
+            neighbors.append(i-1,j)
+        if m=='S':
+          if i+1<numRows & map[i+1][j]!='#':
+            neighbors.append(i+1,j)
+        if m=='W':
+          if i-1>=0 & map[i][j-1]!='#':
+            neighbors.append(i,j-1)
+        if m=='E':
+          if j+1<numCols & map[i][j+1]!='#':
+            neighbors.append(i,j+1)
 
-'''
-def aStar(m):
-    start=(m.rows,m.cols)
-    g_score={cell:float('inf') for cell in m.grid}
-    g_score[start]=0
-    f_score={cell:float('inf') for cell in m.grid}
-    f_score[start]=h(start,(1,1))
+    return neighbors
 
-    open=PriorityQueue()
-    open.put((h(start,(1,1)),h(start,(1,1)),start))
-    aPath={}
-    while not open.empty():
-        currCell=open.get()[2]
-        if currCell==(1,1):
-            break
-        for d in 'ESNW':
-            if m.maze_map[currCell][d]==True:
-                if d=='E':
-                    childCell=(currCell[0],currCell[1]+1)
-                if d=='W':
-                    childCell=(currCell[0],currCell[1]-1)
-                if d=='N':
-                    childCell=(currCell[0]-1,currCell[1])
-                if d=='S':
-                    childCell=(currCell[0]+1,currCell[1])
 
-                temp_g_score=g_score[currCell]+1
-                temp_f_score=temp_g_score+h(childCell,(1,1))
+#A star algorithm https://en.wikipedia.org/wiki/A*_search_algorithm#Pseudocode
+def aStar(map, start, goal):
+    numRows=len(map)
+    numCols=len(map[0])
 
-                if temp_f_score < f_score[childCell]:
-                    g_score[childCell]= temp_g_score
-                    f_score[childCell]= temp_f_score
-                    open.put((temp_f_score,h(childCell,(1,1)),childCell))
-                    aPath[childCell]=currCell
-    fwdPath={}
-    cell=(1,1)
-    while cell!=start:
-        fwdPath[aPath[cell]]=cell
-        cell=aPath[cell]
-    return fwdPath
-''' 
+    openSet= PriorityQueue()
+
+    cameFrom={}
+
+    grid=[]
+    for i in range(numRows):
+        for j in range(numCols):
+            grid.append(i,j)
+
+    gScore={cell:float('inf') for cell in grid} ##cost to reach current cell
+    gScore[start]=0
+
+    #might be 1000 max
+    fScore={cell:float('inf') for cell in grid} ##cost from current cell to the goal might be 1000 max
+    fScore[start]=h(start,goal)
+
+    openSet.put(fScore[start],start)
+    while not openSet.empty():
+        current = openSet.get()[2] ## we get the node with lowest fScore
+
+        if current==goal:
+            return reconstructPath(cameFrom, current)
+        
+        openSet.remove(fScore[current],current)
+        neighbors=computeNeighbors(map,current)
+
+        for n in neighbors:
+            tentative_gScore=gScore[current]+h(current,n)
+            if tentative_gScore<gScore[n]:
+                cameFrom[n]=current
+                gScore[n]=tentative_gScore
+                fScore[n]= tentative_gScore + h(n,goal)
+            if not openSet.contains(fScore[n],n): 
+                openSet.add(fScore[n],n)
+
+    return []
+
+
 
 if __name__=='__main__':
-    labyrinth = [[".",".",".",".",".",".",".",".","."],
+    labyrinth = [[".","#","#"],
+                [".","#","."],
+                [".",".","."]]
+    path=aStar(labyrinth,(0,0),(len(labyrinth)-1,len(labyrinth[0])-1))
+    solution = len(path)
+
+'''    labyrinth = [[".",".",".",".",".",".",".",".","."],
                  ["#",".",".",".","#",".",".",".","."],
                  [".",".",".",".","#",".",".",".","."],
                  [".","#",".",".",".",".",".","#","."],
-                 [".","#",".",".",".",".",".","#","."]]
-    
-    path=aStar(labyrinth)
-
-    solution = path.length
+                 [".","#",".",".",".",".",".","#","."]]''' 
