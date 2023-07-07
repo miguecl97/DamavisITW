@@ -5,6 +5,7 @@ from queue import PriorityQueue
 import sys
  
 
+
 def readLabyrinth(filename):
     """A simple function that reads a file with the entry format required by the PDF shared, it returns a maze"""
     labyrithnFile = open(filename, "r")
@@ -38,7 +39,28 @@ def reconstructPath(cameFrom, current):
 
 
 
-def h(cell1,cell2):
+def computeRod(cell,orientation,map):
+    numRows=len(map)
+    numCols=len(map[0])
+
+    if orientation==0:
+       if cell[1]-1>=0 and cell[1]+1<numCols:
+            left=(cell[0],cell[1]-1)
+            right=(cell[0],cell[1]+1)
+            return [left,cell,right]
+
+    if orientation==1:
+       if cell[0]-1>=0 and cell[0]+1<numRows:
+            top=(cell[0]-1,cell[1])
+            bottom=(cell[0]+1,cell[1])
+            return [top,cell,bottom]
+    
+    return[]
+
+
+
+###not used care.
+def d(cell1,cell2):
     """This function computes the Mahattan distance,is a distance measure that is calculated by taking the sum of distances between the x and y coordinates."""
     x1,y1=cell1
     x2,y2=cell2
@@ -46,30 +68,76 @@ def h(cell1,cell2):
     return abs(x1-x2) + abs(y1-y2)
 
 
+def h(rod1,rod2):
+    """This function computes the Mahattan distance,is a distance measure that is calculated by taking the sum of distances between the x and y coordinates."""
+    #x2,y2=cell2
 
-def computeNeighbors(map,current):
+    #rod1=computeRod(cell1)
+    #rod2=computeRod(cell2)
+   
+    distance=0
+
+    for i in range(len(rod1)):
+        distance+=abs(rod1[i][1]-rod2[i][1]) + abs(rod1[i][2]-rod2[i][2])
+
+    return distance
+
+
+def computeNeighbors(map,cell,orientation):
     """Computes all the possible neighbors given a static cell"""
     numRows=len(map)
     numCols=len(map[0])
 
+    rod=computeRod(cell,orientation,map)
     neighbors=[]
-    i=current[0]
-    j=current[1]
 
-    #current moves are N=move up; S=move down;  W=move left; E=move right
-    for m in 'NSWE':
+    for m in 'RNSWE':
+        newRod=[]
+        if m=='R':
+          if orientation==0:
+            if rod[1][1]+1<numCols and rod[1][0]-1<numRows and map[rod[1][0]-1,rod[1][1]+1]!='#':
+                if rod[2][1]-1<numCols and rod[2][0]+1<numRows and map[rod[2][0]+1,rod[2][1]-1]!='#':
+                   neighbors().append([(rod[1][0]-1,rod[1][1]+1),(cell),(rod[2][0]+1, rod[2][1]-1)])               
+          if orientation==1:
+             if rod[1][1]-1<numCols and rod[1][0]+1<numRows and map[rod[1][0]+1,rod[1][1]-1]!='#':
+                if rod[2][1]+1<numCols and rod[2][0]-1<numRows and map[rod[2][0]-1,rod[2][1]+1]!='#':
+                   neighbors().append([(rod[1][0]+1,rod[1][1]-1),(cell),(rod[2][0]-1,rod[2][1]+1)])
+      
         if m=='N':
-          if i-1>=0 and map[i-1][j]!='#':
-            neighbors.append((i-1,j))
+          valid=True
+          for c in rod:
+             newRod.append(c)
+             if not c[0]-1>=0 and map[c[0]-1][c[1]]!='#':
+                valid=False
+          if valid:
+            neighbors().append(newRod)
+
         if m=='S':
-          if i+1<numRows and map[i+1][j]!='#':
-            neighbors.append((i+1,j))
+          valid=True
+          for c in rod:
+             newRod.append(c)
+             if not c[0]+1<numRows and map[c[0]+1][c[1]]!='#':
+                valid=False
+          if valid:
+            neighbors().append(newRod)
+
         if m=='W':
-          if j-1>=0 and map[i][j-1]!='#':
-            neighbors.append((i,j-1))
+          valid=True
+          for c in rod:
+             newRod.append(c)
+             if not c[1]-1>=0 and map[c[0]][c[1]-1]!='#':
+                valid=False
+          if valid:
+            neighbors().append(newRod)
+
         if m=='E':
-          if j+1<numCols and map[i][j+1]!='#':
-            neighbors.append((i,j+1))
+          valid=True
+          for c in rod:
+             newRod.append(c)
+             if not c[1]+1<numCols and map[c[0]][c[1]+1]!='#':
+                valid=False
+          if valid:
+            neighbors().append(newRod)
 
     return neighbors
 
@@ -82,21 +150,22 @@ def aStar(map, start, goal):
     openSet= PriorityQueue()
     cameFrom={}
     grid=[]
+    rods=[]
 
     for i in range(numRows):
         for j in range(numCols):
-            grid.append((i,j))
+            rods.append(computeRod((i,j),0,map))
+            rods.append(computeRod((i,j),1,map))
 
     #g is the cost from start to current node
     #print(map)
     #print(grid)
-
-    gScore={cell:float('inf') for cell in grid} ##cost to reach current cell
-    gScore[start]=0
+    gScore={rod:float('inf') for rod in rods} ##cost to reach current cell
+    gScore[(start)]=0
 
     #f=g + h
-    fScore={cell:float('inf') for cell in grid} ##cost from current cell to the goal might be 1000 max
-    fScore[start]=h(start,goal)
+    fScore={rod:float('inf') for rod in rods} ##cost from current cell to the goal might be 1000 max
+    fScore[(start)]=h(start,goal)
 
     openSet.put((fScore[start],start))
     #print(openSet.get()[1])
@@ -122,19 +191,27 @@ def aStar(map, start, goal):
 
     return []
 
-
+def computeDestination(map):
+   lastCell=(len(labyrinth)-1,len(labyrinth[0])-1)
+   for i in range(1):
+      if len(computeRod(lastCell,i,map)) != 0:
+        return computeRod(lastCell,i,map)
+    
 
 if __name__=='__main__':
-    labyrinth=readLabyrinth(sys.argv[1])
-    print(labyrinth)
-    path=aStar(labyrinth,(0,0),(len(labyrinth)-1,len(labyrinth[0])-1))
+    #labyrinth=readLabyrinth(sys.argv[1])
+
+    labyrinth = [[".",".",".",".",".",".",".",".","."],
+                 ["#",".",".",".","#",".",".",".","."],
+                 [".",".",".",".","#",".",".",".","."],
+                 [".","#",".",".",".",".",".","#","."],
+                 [".","#",".",".",".",".",".","#","."]]
+    
+    initialRod=[(0,0),(0,1),(0,2)]
+    destinationRod=computeDestination(labyrinth)
+    path=aStar(labyrinth,initialRod,destinationRod)
 
     print("camino final", path)
 
     solution = len(path)
 
-'''    labyrinth = [[".",".",".",".",".",".",".",".","."],
-                 ["#",".",".",".","#",".",".",".","."],
-                 [".",".",".",".","#",".",".",".","."],
-                 [".","#",".",".",".",".",".","#","."],
-                 [".","#",".",".",".",".",".","#","."]]''' 
