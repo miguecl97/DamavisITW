@@ -3,15 +3,16 @@
 
 from queue import PriorityQueue
 
-
 def reconstructPath(cameFrom, current):
-    total_path= {current}
-    while current in cameFrom.keys:
+    total_path= [current]
+    print("camefrom", cameFrom)
+    while current in cameFrom.keys():
         current = cameFrom[current]
-        total_path.append(current)###might be prepend
-    
-    return total_path
+        total_path.append(current)
 
+    total_path.reverse()
+
+    return total_path
 
 
 #distancia Manhattan
@@ -52,20 +53,21 @@ def computeNeighbors(map,current):
 def aStar(map, start, goal):
     numRows=len(map)
     numCols=len(map[0])
-
     openSet= PriorityQueue()
-
     cameFrom={}
-
     grid=[]
+
     for i in range(numRows):
         for j in range(numCols):
             grid.append((i,j))
 
+    #g is the cost from start to current node
+    print(map)
+    print(grid)
     gScore={cell:float('inf') for cell in grid} ##cost to reach current cell
     gScore[start]=0
 
-    #might be 1000 max
+    #f is g + h
     fScore={cell:float('inf') for cell in grid} ##cost from current cell to the goal might be 1000 max
     fScore[start]=h(start,goal)
 
@@ -73,21 +75,29 @@ def aStar(map, start, goal):
     #print(openSet.get()[1])
     while not openSet.empty():
         current = openSet.get()[1] ## we get the node with lowest fScore
-
+        
         if current==goal:
             return reconstructPath(cameFrom, current)
         
         #openSet.remove(fScore[current],current)
         neighbors=computeNeighbors(map,current)
-
+        print("vecinos de", current, ": ", neighbors)
+        print("----------\n")
         for n in neighbors:
-            tentative_gScore=gScore[current]+h(current,n)
+            print("explorando vecino", n, "gScore[current]=", gScore[current] )
+            tentative_gScore=gScore[current]+1
+            print("tentativegScore: ", tentative_gScore, "gScoreN", gScore[n])
             if tentative_gScore < gScore[n]:
-                cameFrom[n]=current
+                print("entre en el if")
+                cameFrom[n] = current
                 gScore[n] = tentative_gScore
                 fScore[n] = tentative_gScore + h(n,goal)
-            if not any((fScore[n],n) in item for item in openSet.queue):
-                openSet.put((fScore[n],n))
+                print("mostrando estaod de la cola")
+                for item in openSet.queue:
+                   print(item)
+                print(any(n in item[1] for item in openSet.queue))
+                if not any((n in item[1] for item in openSet.queue)):
+                    openSet.put((fScore[n],n))
 
     return []
 
@@ -96,8 +106,11 @@ def aStar(map, start, goal):
 if __name__=='__main__':
     labyrinth = [[".","#","#"],
                 [".","#","."],
-                [".",".","."]]
+                ["#",".","."]]
     path=aStar(labyrinth,(0,0),(len(labyrinth)-1,len(labyrinth[0])-1))
+
+    print("camino final", path)
+
     solution = len(path)
 
 '''    labyrinth = [[".",".",".",".",".",".",".",".","."],
