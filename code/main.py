@@ -27,23 +27,23 @@ def computeNeighbors(map,current):
     numRows=len(map)
     numCols=len(map[0])
 
-    neighbors={}
+    neighbors=[]
     i=current[0]
     j=current[1]
 
     for m in 'NSWE':
         if m=='N':
-          if i-1>=0 & map[i-1][j]!='#':
-            neighbors.append(i-1,j)
+          if i-1>=0 and map[i-1][j]!='#':
+            neighbors.append((i-1,j))
         if m=='S':
-          if i+1<numRows & map[i+1][j]!='#':
-            neighbors.append(i+1,j)
+          if i+1<numRows and map[i+1][j]!='#':
+            neighbors.append((i+1,j))
         if m=='W':
-          if i-1>=0 & map[i][j-1]!='#':
-            neighbors.append(i,j-1)
+          if j-1>=0 and map[i][j-1]!='#':
+            neighbors.append((i,j-1))
         if m=='E':
-          if j+1<numCols & map[i][j+1]!='#':
-            neighbors.append(i,j+1)
+          if j+1<numCols and map[i][j+1]!='#':
+            neighbors.append((i,j+1))
 
     return neighbors
 
@@ -60,7 +60,7 @@ def aStar(map, start, goal):
     grid=[]
     for i in range(numRows):
         for j in range(numCols):
-            grid.append(i,j)
+            grid.append((i,j))
 
     gScore={cell:float('inf') for cell in grid} ##cost to reach current cell
     gScore[start]=0
@@ -69,24 +69,25 @@ def aStar(map, start, goal):
     fScore={cell:float('inf') for cell in grid} ##cost from current cell to the goal might be 1000 max
     fScore[start]=h(start,goal)
 
-    openSet.put(fScore[start],start)
+    openSet.put((fScore[start],start))
+    #print(openSet.get()[1])
     while not openSet.empty():
-        current = openSet.get()[2] ## we get the node with lowest fScore
+        current = openSet.get()[1] ## we get the node with lowest fScore
 
         if current==goal:
             return reconstructPath(cameFrom, current)
         
-        openSet.remove(fScore[current],current)
+        #openSet.remove(fScore[current],current)
         neighbors=computeNeighbors(map,current)
 
         for n in neighbors:
             tentative_gScore=gScore[current]+h(current,n)
-            if tentative_gScore<gScore[n]:
+            if tentative_gScore < gScore[n]:
                 cameFrom[n]=current
-                gScore[n]=tentative_gScore
-                fScore[n]= tentative_gScore + h(n,goal)
-            if not openSet.contains(fScore[n],n): 
-                openSet.add(fScore[n],n)
+                gScore[n] = tentative_gScore
+                fScore[n] = tentative_gScore + h(n,goal)
+            if not any((fScore[n],n) in item for item in openSet.queue):
+                openSet.put((fScore[n],n))
 
     return []
 
