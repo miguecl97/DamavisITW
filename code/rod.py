@@ -8,7 +8,7 @@ class Rod:
 
 
     def h(self,rod2):
-        """This function computes the Mahattan distance,is a distance measure that is calculated by taking the sum of distances between the x and y coordinates."""
+        """This function computes the euclidean distance,is a distance measure that is calculated by taking the sum of distances between the x and y coordinates."""
         distance=0
         #in this case as each rod has 3 coordinates, we calculate the distance coordinate per coordinate
         for i in range(len(self.cells)):
@@ -83,6 +83,14 @@ class Rod:
 
         return neighbors
     
+    #ToDo: compare 2 rods to check which is best to pick
+    def __lt__(self, other):
+        if self.cells[1][0]>=other.cells[1][0] and self.cells[1][1]>=other.cells[1][1]:
+            return True
+        else:
+            return False
+
+        
     def __str__(self):
         """prints a rod (for debuggin purposes mostly)"""
         return f"Cells: {self.cells}, orientation: {self.orientation}"
